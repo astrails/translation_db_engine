@@ -1,18 +1,14 @@
-class TranslationKeysController < ActionController::Base
-  before_filter :authenticate
+class TranslationKeysController < ApplicationController
+  unloadable
+  # should be defined in the ApplicationController by the user
+  # can usually be just an alias to require_admin
+  before_filter :authenticate_translations_admin
   before_filter :find_translation_key, :only=>%w[show edit update destroy]
 
-  #use host layout/helpers
-  helper :all
   layout :choose_layout
 
-  #prevent 'method missing' for normally controller-side helpers
-  def current_user;nil;end
-  def logged_in?;false;end
-  helper_method :current_user, :logged_in?
-
   def index
-    @translation_keys = TranslationKey.find(:all)
+    @translation_keys = TranslationKey.paginate(:page => params[:page])
   end
 
   def new
@@ -25,7 +21,7 @@ class TranslationKeysController < ActionController::Base
     @translation_key = TranslationKey.new(params[:translation_key])
     if @translation_key.save
       flash[:notice] = 'Created!'
-      redirect_to translation_key_path(@translation_key)
+      redirect_to translation_keys_path
     else
       flash[:error] = 'Failed to save!'
       render :action=>:edit
@@ -42,7 +38,7 @@ class TranslationKeysController < ActionController::Base
   def update
     if @translation_key.update_attributes(params[:translation_key])
       flash[:notice] = 'Saved!'
-      redirect_to @translation_key
+      redirect_to translation_keys_path
     else
       flash[:error] = 'Failed to save!'
       render :action=>:edit
@@ -61,7 +57,7 @@ class TranslationKeysController < ActionController::Base
   end
 
   def choose_layout
-    @@config[:layout] || 'application'
+    self.class.config[:layout] || 'application'
   end
 
   def authenticate
